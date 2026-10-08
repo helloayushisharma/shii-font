@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Letter Versions Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --obsidian: #09090b; --graphite: #18181b; --slate: #27272a; --iron: #3f3f46; --steel: #52525b; --fog: #71717a;
+  --ash: #a1a1aa; --mist: #d4d4d8; --cloud: #ececee; --paper: #f4f4f5; --snow: #fff; --ember: #ff5a00; --subtle: #fafafa;
+  --font: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--graphite); font: 400 15px/1.45 var(--font); padding-bottom: 110px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 0; }
+h1 { font-size: 40px; line-height: 1.28; font-weight: 600; color: var(--obsidian); margin: 0 0 8px; letter-spacing: -.01em; }
+.lead { color: var(--steel); max-width: 720px; margin: 0 0 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--fog); margin-bottom: 40px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 4px; border: 1.5px solid var(--obsidian); display: inline-block; }
+.dot.off { border: 1.5px dashed var(--mist); background: repeating-linear-gradient(-45deg, transparent 0 3px, var(--cloud) 3px 5px); }
+.dot.main { background: var(--obsidian); }
+h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; color: var(--obsidian); }
+.sub { font-size: 13px; color: var(--fog); margin: 0 0 16px; }
+section { margin-bottom: 56px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+
+.card { background: var(--snow); border: 1px solid var(--cloud); border-radius: 24px; padding: 20px; }
+.card.changed { border-color: var(--obsidian); }
+.card header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card header b { font-size: 20px; font-weight: 600; color: var(--obsidian); }
+.tag { font-size: 12px; padding: 4px 8px; border-radius: 12px; border: 1px solid var(--cloud); color: var(--iron); }
+.tag.ember { background: var(--ember); border-color: var(--ember); color: #fff; }
+
+.versions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.v { position: relative; border-radius: 14px; border: 1.5px solid var(--obsidian); background: var(--snow); cursor: pointer; padding: 6px 6px 8px;
+     transition: border-color .15s, opacity .15s, background .15s; user-select: none; }
+.v svg { width: 100%; height: 92px; display: block; }
+.v .n { position: absolute; top: 7px; left: 9px; font-size: 11px; color: var(--fog); }
+.v .state { display: block; text-align: center; font-size: 12px; color: var(--iron); }
+.v.main { background: var(--subtle); }
+.v.main .state { color: var(--obsidian); font-weight: 600; }
+.v.off { border: 1.5px dashed var(--mist); background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--subtle) 6px 10px); }
+.v.off svg { opacity: .22; }
+.v.off .state { color: var(--ash); }
+.v:hover { border-color: var(--steel); }
+.v .star { position: absolute; top: 5px; right: 6px; border: 1px solid var(--cloud); background: var(--snow); border-radius: 8px; font: 500 11px/1 var(--font);
+           padding: 4px 6px; color: var(--iron); cursor: pointer; display: none; }
+.v:not(.off):not(.main):hover .star { display: block; }
+.v .star:hover { background: var(--obsidian); color: #fff; border-color: var(--obsidian); }
+
+.preview { margin-top: 14px; border-top: 1px solid var(--cloud); padding-top: 12px; }
+.preview .lbl { font-size: 12px; color: var(--fog); display: flex; justify-content: space-between; }
+.preview svg { display: block; height: 58px; width: auto; max-width: 100%; margin: 4px 0 10px; }
+.preview svg.lab { height: 80px; }
+.same { font-size: 12px; color: var(--fog); }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--snow); border-top: 1px solid var(--cloud); z-index: 5; }
+.bar .in { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+.chips { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 32px; font-size: 13px; color: var(--fog); }
+.chip { font-size: 12px; padding: 5px 9px; border-radius: 12px; background: var(--iron); color: #fafafa; }
+.btn { font: 400 14px/1 var(--font); border-radius: 14px; padding: 13px 18px; cursor: pointer; border: 0; white-space: nowrap; }
+.btn.primary { background: var(--obsidian); color: #fff;
+  box-shadow: inset 0 0.5px 0 0 rgba(255,255,255,.5), inset 0 9px 14px -5px rgba(117,123,133,.4), 0 0 0 1.5px rgb(44,46,52), 0 4px 6px 0 rgba(0,0,0,.14); }
+.btn.primary:disabled { opacity: .35; cursor: default; }
+.btn.neutral { background: var(--subtle); color: var(--graphite); box-shadow: inset 0 0 0 1px var(--cloud); }
+
+.modal { position: fixed; inset: 0; background: rgba(9,9,11,.4); display: none; place-items: center; z-index: 10; }
+.modal.open { display: grid; }
+.modal .box { background: var(--snow); border-radius: 36px; padding: 28px; width: min(560px, 92vw); border: 1px solid var(--cloud); }
+.modal h3 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+.modal p { margin: 0 0 14px; color: var(--steel); font-size: 14px; }
+.modal textarea { width: 100%; height: 220px; border: 1px solid var(--cloud); border-radius: 14px; padding: 14px; font: 13px/1.5 ui-monospace, Menlo, monospace; resize: vertical; }
+.modal .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Repeated letters</h1>
+  <p class="lead">When you type, each letter rotates through the versions you keep, so a doubled letter (like the k's in "bookkeeper") never looks stamped. Each card shows every version, the letter repeated, and a real word. Click a version to keep or drop it. Keep just one and that letter will look identical every time.</p>
+  <div class="legend">
+    <span><i class="dot main"></i> main version (used first)</span>
+    <span><i class="dot"></i> kept, used in rotation</span>
+    <span><i class="dot off"></i> dropped</span>
+    <span>Hover a kept version → <b style="font-weight:500;color:var(--iron)">Make main</b></span>
+  </div>
+  <section><h2>Small letters</h2><p class="sub">The numbers are your three drawings from the sheets.</p><div class="grid" id="lower"></div></section>
+  <section><h2>Capitals</h2><p class="sub">You drew a second version of these 12 capitals. The rest have one version, so they're always identical.</p><div class="grid" id="upper"></div></section>
+</div>
+
+<div class="bar"><div class="in">
+  <div class="chips" id="chips"></div>
+  <button class="btn neutral" id="reset">Reset</button>
+  <button class="btn primary" id="send">Send to Claude</button>
+</div></div>
+
+<div class="modal" id="modal"><div class="box">
+  <h3>Send your picks to Claude</h3>
+  <p>Copy this and paste it into the chat. I'll rebuild the font with exactly these versions.</p>
+  <textarea id="out" readonly></textarea>
+  <div class="acts"><button class="btn neutral" id="close">Close</button><button class="btn primary" id="copy">Copy</button></div>
+</div></div>
+
+<script>
+const DATA = __DATA__;   // { glyphs: {name: {d, adv}}, cmap, ascent, descent, space, letters: {ch: nVersions}, current: {ch: [..]} }
+const WORDS = {
+  a: "banana", b: "bubble", c: "success", d: "added", e: "coffee", f: "fluffy", g: "giggle", h: "hush hush", i: "bikini",
+  j: "jiujitsu", k: "bookkeeper", l: "little", m: "mummy", n: "banner", o: "cocoa", p: "happy puppy", q: "quick quiz",
+  r: "error", s: "mississippi", t: "letter", u: "vacuum", v: "savvy", w: "powwow", x: "xerox", y: "yummy", z: "pizza",
+  T: "TATTOO", A: "AAAH", S: "SASS", I: "III", M: "MAMMA", C: "CIRCUS", B: "BOBBY", P: "PAPPY", H: "HAHA", W: "WOW", N: "NONNA", D: "DADDY",
+};
+const AGL = n => DATA.cmap[n];   // char -> base glyph name
+const all = ch => Array.from({ length: DATA.letters[ch] || 1 }, (_, i) => i + 1);
+const sel = {};      // ch -> kept drawing numbers, main first
+const start = {};
+for (const ch of Object.keys(DATA.letters)) { sel[ch] = [...(DATA.current[ch] || all(ch))]; start[ch] = [...sel[ch]]; }
+
+const vname = (ch, v) => v === 1 ? AGL(ch) : `${AGL(ch)}.alt${v}`;
+
+// Shape a word the way the font does: after a letter's 1st kept version use its 2nd, after a 2nd use its 3rd.
+function shape(text) {
+  const out = []; let prevIdx = -1;
+  for (const ch of text) {
+    if (ch === " ") { out.push({ space: true }); prevIdx = -1; continue; }
+    const kept = sel[ch] || [1];
+    let idx = 0;
+    if (prevIdx === 0 && kept.length > 1) idx = 1;
+    else if (prevIdx === 1 && kept.length > 2) idx = 2;
+    const v = kept[idx];
+    out.push({ ch, v, name: (sel[ch] ? vname(ch, v) : AGL(ch)) });
+    prevIdx = idx;
+  }
+  return out;
+}
+function render(text, labels) {
+  const asc = DATA.ascent, desc = DATA.descent, lab = labels ? 330 : 0;
+  let x = 40, parts = [];
+  for (const g of shape(text)) {
+    if (g.space) { x += DATA.space; continue; }
+    const gl = DATA.glyphs[g.name]; if (!gl) continue;
+    parts.push(`<path d="${gl.d}" transform="translate(${x} ${asc + 40}) scale(1 -1)" fill="#18181b"/>`);
+    if (labels) parts.push(`<text x="${x + gl.adv / 2}" y="${asc - desc + 40 + 270}" text-anchor="middle" font-size="230" fill="#a1a1aa" font-family="DM Sans">${g.v}</text>`);
+    x += gl.adv;
+  }
+  const H = asc - desc + 80 + lab;
+  return `<svg class="${labels ? "lab" : ""}" viewBox="0 0 ${x + 40} ${H}" preserveAspectRatio="xMinYMid meet">${parts.join("")}</svg>`;
+}
+function versionSVG(ch, v) {
+  const gl = DATA.glyphs[vname(ch, v)];
+  const asc = DATA.ascent, desc = DATA.descent;
+  return `<svg viewBox="${-60} ${-asc - 40} ${gl.adv + 120} ${asc - desc + 80}" preserveAspectRatio="xMidYMid meet">
+    <line x1="-60" x2="${gl.adv + 60}" y1="0" y2="0" stroke="#ececee" stroke-width="10"/>
+    <path d="${gl.d}" transform="scale(1 -1)" fill="#18181b"/></svg>`;
+}
+
+function card(ch) {
+  const kept = sel[ch], changed = JSON.stringify(kept) !== JSON.stringify(start[ch]);
+  const versions = all(ch).map(v => {
+    const k = kept.indexOf(v), cls = k === 0 ? "main" : k > 0 ? "" : "off";
+    const state = k === 0 ? "main" : k > 0 ? "kept" : "dropped";
+    return `<div class="v ${cls}" data-ch="${ch}" data-v="${v}"><span class="n">${v}</span>${versionSVG(ch, v)}<span class="state">${state}</span>
+            <button class="star" data-ch="${ch}" data-v="${v}">Make main</button></div>`;
+  }).join("");
+  const rep = ch.repeat(6);
+  return `<div class="card${changed ? " changed" : ""}" id="card-${ch}">
+    <header><b>${ch}${(DATA.gaps[ch] ?? 99) < 25 ? ` <span class="tag ember" title="Closest gap between two of these: ${DATA.gaps[ch]} units">touches when doubled</span>` : ""}</b>${changed ? '<span class="tag ember">changed</span>' : kept.length === 1 ? '<span class="tag">always the same</span>' : `<span class="tag">${kept.length} versions rotate</span>`}</header>
+    <div class="versions">${versions}</div>
+    <div class="preview">
+      <div class="lbl"><span>Repeated</span><span>numbers = which version</span></div>${render(rep, true)}
+      <div class="lbl"><span>In a word</span></div>${render(WORDS[ch] || rep)}
+    </div></div>`;
+}
+function draw() {
+  document.getElementById("lower").innerHTML = Object.keys(DATA.letters).filter(c => c === c.toLowerCase()).map(card).join("");
+  document.getElementById("upper").innerHTML = Object.keys(DATA.letters).filter(c => c !== c.toLowerCase()).map(card).join("");
+  const changes = Object.keys(sel).filter(c => JSON.stringify(sel[c]) !== JSON.stringify(start[c]));
+  document.getElementById("chips").innerHTML = changes.length
+    ? changes.map(c => `<span class="chip">${c}: ${sel[c].length === 1 ? "only " + sel[c][0] : sel[c].join(" → ")}</span>`).join("")
+    : "No changes yet. Click versions to keep or drop them.";
+  document.getElementById("send").disabled = !changes.length;
+}
+document.addEventListener("click", e => {
+  const star = e.target.closest(".star");
+  if (star) { const { ch } = star.dataset, v = +star.dataset.v; sel[ch] = [v, ...sel[ch].filter(x => x !== v)]; draw(); return; }
+  const t = e.target.closest(".v"); if (!t) return;
+  const ch = t.dataset.ch, v = +t.dataset.v, kept = sel[ch];
+  if (kept.includes(v)) { if (kept.length > 1) sel[ch] = kept.filter(x => x !== v); }
+  else sel[ch] = [...kept, v];
+  draw();
+});
+document.getElementById("reset").onclick = () => { for (const c in start) sel[c] = [...start[c]]; draw(); };
+const modal = document.getElementById("modal"), out = document.getElementById("out");
+document.getElementById("send").onclick = () => {
+  const variants = {};
+  for (const c in sel) if (JSON.stringify(sel[c]) !== JSON.stringify(all(c))) variants[c] = sel[c];
+  out.value = JSON.stringify({ variants }, null, 1); modal.classList.add("open"); out.select();
+};
+document.getElementById("close").onclick = () => modal.classList.remove("open");
+modal.onclick = e => { if (e.target === modal) modal.classList.remove("open"); };
+document.getElementById("copy").onclick = async e => {
+  try { await navigator.clipboard.writeText(out.value); } catch (err) { out.select(); document.execCommand("copy"); }
+  e.target.textContent = "Copied ✓"; setTimeout(() => e.target.textContent = "Copy", 1500);
+};
+draw();
+</script>
+</body>
+</html>

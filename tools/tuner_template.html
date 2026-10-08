@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shii Font Tuner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+<style>
+@font-face { font-family: "Shii Built"; src: url(data:font/otf;base64,__FONT_B64__) format("opentype"); }
+:root {
+  --paper: #f7f5f0; --panel: #ffffff; --ink: #17171a; --muted: #6e6e76; --line: #e4e1da;
+  --accent: #e0562b; --accent-soft: rgba(224, 86, 43, .12);
+  --lsb: rgba(56, 120, 230, .20); --rsb: rgba(224, 86, 43, .20); --kern: #1b9a5a;
+  --guide: #d9d4ca; --guide-base: #c9a99a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--paper); color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; display: grid;
+       grid-template-rows: auto 1fr auto; }
+header { display: flex; align-items: center; gap: 18px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+header h1 span { font-family: "Shii Built"; font-size: 22px; font-weight: 400; margin-right: 6px; }
+.tabs { display: flex; gap: 2px; background: var(--paper); padding: 3px; border-radius: 8px; }
+.tabs button { border: 0; background: none; padding: 5px 12px; border-radius: 6px; font: inherit; color: var(--muted); cursor: pointer; }
+.tabs button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+header .spacer { flex: 1; }
+.chip { font-size: 12px; color: var(--muted); }
+main { display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
+#stage { overflow: auto; padding: 18px 22px 40px; min-width: 0; }
+#editor { width: 100%; min-height: 64px; resize: vertical; font: 14px/1.5 Inter, sans-serif; padding: 10px 12px;
+          border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+.presets button, .btn { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 11px;
+                        font: inherit; font-size: 12px; cursor: pointer; color: var(--ink); }
+.presets button:hover, .btn:hover { border-color: #c9c4b8; }
+.btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+#canvasWrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+#preview { display: block; }
+#preview .hit { fill: transparent; cursor: pointer; }
+#preview .hit:hover { fill: var(--accent-soft); }
+#native { margin-top: 14px; background: var(--panel); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; }
+#native .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+#native .txt { font-family: "Shii Built"; white-space: pre-wrap; font-feature-settings: "calt" 1, "kern" 1; }
+aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px 18px 90px; }
+aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+aside h2:first-child { margin-top: 0; }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px; margin: 7px 0; }
+.row label { color: var(--ink); }
+.row output { font: 12px "JetBrains Mono", monospace; color: var(--muted); }
+.row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.toggles label { display: flex; gap: 5px; align-items: center; cursor: pointer; color: var(--muted); }
+#inspect .empty { color: var(--muted); background: var(--paper); border-radius: 8px; padding: 14px; }
+#pairView { width: 100%; background: var(--paper); border-radius: 8px; display: block; }
+.stepper { display: grid; grid-template-columns: 1fr auto auto auto; gap: 4px; align-items: center; margin: 6px 0; }
+.stepper .name { display: flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.stepper button { width: 28px; height: 26px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; cursor: pointer; font: inherit; }
+.stepper input { width: 56px; height: 26px; border: 1px solid var(--line); border-radius: 6px; text-align: center; font: 12px "JetBrains Mono", monospace; }
+.gname { font: 500 13px "JetBrains Mono", monospace; }
+.keys { font-size: 11.5px; color: var(--muted); background: var(--paper); border-radius: 8px; padding: 9px 11px; line-height: 1.7; }
+kbd { font: 11px "JetBrains Mono", monospace; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+#kernList { max-height: 220px; overflow: auto; }
+#kernList .k { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--paper); }
+#kernList .k .p { font-family: "Shii Built"; font-size: 20px; cursor: pointer; }
+#kernList .k .v { font: 12px "JetBrains Mono", monospace; }
+#kernList .k button { border: 0; background: none; color: var(--muted); cursor: pointer; }
+#grid { display: none; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+#grid .cell { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px; cursor: pointer; text-align: center; }
+#grid .cell:hover { border-color: var(--accent); }
+#grid .cell svg { width: 100%; height: 76px; display: block; }
+#grid .cell div { font: 10px "JetBrains Mono", monospace; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+footer { display: flex; align-items: center; gap: 14px; padding: 10px 20px; background: var(--ink); color: #fff; }
+footer .sum { flex: 1; font-size: 12.5px; color: #cfcfd4; }
+footer .sum b { color: #fff; font-weight: 600; }
+footer .btn { background: transparent; color: #fff; border-color: #3a3a40; }
+footer .btn.primary { background: var(--accent); border-color: var(--accent); }
+#modal { position: fixed; inset: 0; background: rgba(20,20,24,.45); display: none; place-items: center; z-index: 9; }
+#modal .box { background: var(--panel); border-radius: 12px; width: min(640px, 92vw); padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+#modal h3 { margin: 0 0 4px; font-size: 16px; }
+#modal p { margin: 0 0 12px; color: var(--muted); }
+#modal textarea { width: 100%; height: 300px; font: 12px/1.45 "JetBrains Mono", monospace; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+#modal .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+#loading { padding: 40px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>Shii</span> font tuner</h1>
+  <div class="tabs"><button class="on" data-view="text">Text</button><button data-view="grid">All glyphs</button></div>
+  <div class="spacer"></div>
+  <span class="chip" id="hist"></span>
+  <button class="btn" id="undo" title="⌘Z">Undo</button>
+  <button class="btn" id="redo" title="⇧⌘Z">Redo</button>
+</header>
+<main>
+  <section id="stage">
+    <div id="textView">
+      <textarea id="editor" spellcheck="false"></textarea>
+      <div class="presets" id="presets"></div>
+      <div id="canvasWrap"><div id="loading">Loading font…</div><svg id="preview"></svg></div>
+      <div id="native"><div class="lbl">Last built .otf, rendered by the browser (calt + kern on) — doesn’t include unsaved tweaks</div><div class="txt" id="nativeTxt"></div></div>
+    </div>
+    <div id="grid"></div>
+  </section>
+  <aside>
+    <h2>Selected letter</h2>
+    <div id="inspect"><div class="empty">Click a letter in the preview to adjust its spacing and its kerning with the next letter.</div></div>
+
+    <h2>Keys</h2>
+    <div class="keys">
+      <kbd>←</kbd> <kbd>→</kbd> gap to next letter (kerning)<br>
+      <kbd>⌥←</kbd> <kbd>⌥→</kbd> left side &nbsp; <kbd>⌘←</kbd> <kbd>⌘→</kbd> right side<br>
+      <kbd>↑</kbd> <kbd>↓</kbd> raise / lower the letter<br>
+      hold <kbd>⇧</kbd> for bigger steps &nbsp;·&nbsp; <kbd>Tab</kbd> next letter &nbsp;·&nbsp; <kbd>Esc</kbd> deselect
+    </div>
+
+    <h2>Whole font</h2>
+    <div class="row"><label>Preview size</label><output id="o_size"></output><input type="range" id="size" min="24" max="220" value="72"></div>
+    <div class="row"><label>Leading (line gap)</label><output id="o_lineGap"></output><input type="range" id="lineGap" min="-300" max="900" step="10"></div>
+    <div class="row"><label>Tracking</label><output id="o_tracking"></output><input type="range" id="tracking" min="-80" max="200" step="2"></div>
+    <div class="row"><label>Default side spacing</label><output id="o_sidebearing"></output><input type="range" id="sidebearing" min="0" max="160" step="1"></div>
+    <div class="row"><label>Word space</label><output id="o_space"></output><input type="range" id="space" min="80" max="700" step="5"></div>
+    <div class="toggles">
+      <label><input type="checkbox" id="t_cycle" checked> cycle versions</label>
+      <label><input type="checkbox" id="t_guides" checked> guide lines</label>
+      <label><input type="checkbox" id="t_boxes"> spacing boxes</label>
+    </div>
+
+    <h2>Kerning pairs <span class="chip" id="kcount"></span></h2>
+    <div id="kernList"></div>
+  </aside>
+</main>
+<footer>
+  <div class="sum" id="summary"></div>
+  <button class="btn" id="reset">Reset all</button>
+  <button class="btn primary" id="send">Send to Claude</button>
+</footer>
+<div id="modal"><div class="box">
+  <h3>Send these settings to Claude</h3>
+  <p>Copy and paste this into the chat (or download it as <code>tuning.json</code> into the project folder). I’ll rebuild the font with it.</p>
+  <textarea id="out" readonly></textarea>
+  <div class="acts"><button class="btn" id="dl">Download tuning.json</button><button class="btn" id="close">Close</button><button class="btn primary" id="copy">Copy</button></div>
+</div></div>
+
+<script>
+const UPM = 1000;
+const INFO = __INFO__;
+const DEFAULT_T = __TUNING__;
+const STAMP = "__STAMP__";
+const FONT_B64 = "__FONT_B64__";
+const G = INFO.glyphs, CMAP = INFO.cmap;
+const ASC = INFO.ascent, DESC = INFO.descent, XH = INFO.xHeight, CAP = INFO.capHeight;
+const PAD = 60;
+
+const PRESETS = {
+  "Pangram": "The quick brown fox jumps over the lazy dog.\nPack my box with five dozen liquor jugs!",
+  "Paragraph": "Hello! This is my own handwriting, turned into a real font. It's a little wobbly, a little round, and totally me. Write a letter, a poster, a birthday card — ₹250 & 42% off, (yes, really).",
+  "Spacing test": "nnnnonnoonoooo\nHHHHOHHOOHOOOO\nhamburgefonstiv\nHAMBURGEFONSTIV",
+  "Kerning pairs": "AV AW AY AT Av Aw Ay\nTa Te To Tr Tu Ty Wa We Wo Ya Ye Yo\nLT LV LW LY P. P, F. F, T. T, V. Y.\nf. f, r. r, y. y, \"A\" 'A' (j) [j]\nkerning: Today, Yesterday, Wave, AVATAR",
+  "Numbers": "0123456789\n10 11 17 71 77 2025 ₹1,499.00 $4.75 €12 £7\n12:30 · 4/5 · 50% · #1 · +91",
+  "Repeats": "hello letter coffee little bubble\nsee all the good books, Mississippi!",
+};
+
+// ---------------------------------------------------------------- state
+let S = loadState();
+let hist = [], fut = [];
+let view = "text", sel = null, layout = [], scale = 1;
+let font = null; const PATH = {};
+let opts = { cycle: true, guides: true, boxes: false, size: 72 };
+
+function loadState() {
+  try { const j = JSON.parse(localStorage.getItem("shii-tuner")); if (j && j.stamp === STAMP) return j.state; } catch (e) {}
+  return structuredClone(DEFAULT_T);
+}
+function persist() { try { localStorage.setItem("shii-tuner", JSON.stringify({ stamp: STAMP, state: S })); } catch (e) {} }
+function change(fn) {
+  hist.push(JSON.stringify(S)); if (hist.length > 300) hist.shift(); fut = [];
+  fn(); tidy(); persist(); renderAll();
+}
+function tidy() {
+  for (const [k, v] of Object.entries(S.glyphs)) {
+    if (v.lsb === undefined) delete v.lsb; if (v.rsb === undefined) delete v.rsb; if (!v.dy) delete v.dy;
+    if (!Object.keys(v).length) delete S.glyphs[k];
+  }
+  for (const [k, v] of Object.entries(S.kerning)) if (!v) delete S.kerning[k];
+}
+
+// ---------------------------------------------------------------- metrics
+const has = n => n in G;
+const baseOf = n => (G[n] && G[n].base) || n.split(".alt")[0];
+function sb(n) {
+  const o = S.glyphs[n] || {}, b = S.glyphs[baseOf(n)] || {};
+  // spacing is shared by all versions; raise/lower belongs to each drawing
+  // (accented letters follow their base letter)
+  const dyInherit = n.includes(".alt") ? 0 : (b.dy ?? 0);
+  return { lsb: o.lsb ?? b.lsb ?? S.sidebearing, rsb: o.rsb ?? b.rsb ?? S.sidebearing, dy: o.dy ?? dyInherit };
+}
+// the built outlines already include the dy from the last build
+const lift = n => (G[n] ? sb(n).dy - (G[n].dy || 0) : 0);
+function adv(n) {
+  if (n === "space") return S.space + S.tracking;
+  const g = G[n]; if (!g) return 500;
+  const s = sb(n); return g.ink + s.lsb + s.rsb + S.tracking;
+}
+const kernKey = (a, b) => baseOf(a) + " " + baseOf(b);
+const kern = (a, b) => (a && b && a !== "space" && b !== "space") ? (S.kerning[kernKey(a, b)] || 0) : 0;
+
+// mirrors the font's calt lookup: after a v1 letter use v2, after v2 use v3
+function shapeWord(word) {
+  const out = []; let prev = null;
+  for (const ch of word) {
+    let n = CMAP[ch];
+    if (!n) { out.push({ n: ".notdef", ch }); prev = null; continue; }
+    if (opts.cycle && prev) {
+      if (!prev.includes(".alt") && has(n + ".alt2")) n += ".alt2";
+      else if (prev.endsWith(".alt2") && has(n + ".alt3")) n += ".alt3";
+    }
+    out.push({ n, ch }); prev = n;
+  }
+  return out;
+}
+function wordWidth(w) { let x = 0; w.forEach((g, i) => { if (i) x += kern(w[i - 1].n, g.n); x += adv(g.n); }); return x; }
+
+function getPath(n) {
+  if (n in PATH) return PATH[n];
+  const g = font.glyphs.glyphs ? Object.values(font.glyphs.glyphs).find(x => x.name === n) : null;
+  return (PATH[n] = g ? g.getPath(0, 0, UPM).toPathData(1) : "");
+}
+function buildPathCache() {
+  for (let i = 0; i < font.glyphs.length; i++) { const g = font.glyphs.get(i); if (g.name) PATH[g.name] = g.getPath(0, 0, UPM).toPathData(1); }
+}
+
+// ---------------------------------------------------------------- render text
+function renderText() {
+  const svg = document.getElementById("preview");
+  scale = opts.size / UPM;
+  const availPx = document.getElementById("canvasWrap").clientWidth - 18;
+  const avail = availPx / scale - 2 * PAD;
+  const lh = ASC - DESC + S.lineGap;
+  layout = [];
+  const text = document.getElementById("editor").value;
+  let li = 0, maxW = 0;
+  for (const para of text.split("\n")) {
+    const words = para.split(" ");
+    let x = 0, first = true;
+    for (const w of words) {
+      const shaped = shapeWord(w), ww = wordWidth(shaped), sp = first ? 0 : adv("space");
+      if (!first && x + sp + ww > avail) { li++; x = 0; } else if (!first) { layout.push({ li, x, n: "space", a: sp, ch: " " }); x += sp; }
+      shaped.forEach((g, i) => {
+        if (i) x += kern(shaped[i - 1].n, g.n);
+        const a = adv(g.n);
+        layout.push({ li, x, n: g.n, a, ch: g.ch, next: shaped[i + 1] ? i + 1 : null });
+        x += a;
+      });
+      maxW = Math.max(maxW, x); first = false;
+    }
+    li++;
+  }
+  // index of next glyph within the same word, for kerning selection
+  layout.forEach((g, i) => { g.i = i; g.nextIdx = g.next !== null && g.next !== undefined ? i + 1 : null; });
+  const H = li * lh + 2 * PAD - S.lineGap, W = Math.max(avail + 2 * PAD, maxW + 2 * PAD);
+  const parts = [];
+  for (let l = 0; l < li; l++) {
+    const by = PAD + l * lh + ASC;
+    if (opts.guides) {
+      for (const [y, c, dash] of [[by, "var(--guide-base)", ""], [by - XH, "var(--guide)", "8 8"], [by - CAP, "var(--guide)", "8 8"]])
+        parts.push(`<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="${1 / scale}" stroke-dasharray="${dash}"/>`);
+    }
+  }
+  for (const g of layout) {
+    const by = PAD + g.li * lh + ASC, x = PAD + g.x;
+    if (sel === g.i && g.n !== "space") {
+      const s = sb(g.n);
+      parts.push(`<rect x="${x}" y="${by - ASC}" width="${s.lsb}" height="${ASC - DESC}" fill="var(--lsb)"/>`);
+      parts.push(`<rect x="${x + g.a - s.rsb - S.tracking}" y="${by - ASC}" width="${s.rsb + S.tracking}" height="${ASC - DESC}" fill="var(--rsb)"/>`);
+      parts.push(`<rect x="${x}" y="${by - ASC}" width="${g.a}" height="${ASC - DESC}" fill="none" stroke="var(--accent)" stroke-width="${1.5 / scale}"/>`);
+      const nx = g.nextIdx !== null ? layout[g.nextIdx] : null;
+      const k = nx ? kern(g.n, nx.n) : 0;
+      if (k) parts.push(`<rect x="${x + g.a + Math.min(0, k)}" y="${by + 30}" width="${Math.abs(k)}" height="24" fill="var(--kern)" opacity=".8"/>`);
+    } else if (opts.boxes && g.n !== "space") {
+      parts.push(`<rect x="${x}" y="${by - ASC}" width="${g.a}" height="${ASC - DESC}" fill="none" stroke="#bbb" stroke-width="${0.7 / scale}"/>`);
+    }
+    if (g.n !== "space" && G[g.n]) {
+      const dx = sb(g.n).lsb - G[g.n].lsb;
+      parts.push(`<path d="${PATH[g.n] || ""}" transform="translate(${x + dx} ${by - lift(g.n)})" fill="var(--ink)"/>`);
+    }
+    parts.push(`<rect class="hit" data-i="${g.i}" x="${x}" y="${by - ASC}" width="${Math.max(g.a, 1)}" height="${ASC - DESC}"/>`);
+  }
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W * scale); svg.setAttribute("height", H * scale);
+  svg.innerHTML = parts.join("");
+  document.getElementById("nativeTxt").textContent = text;
+  document.getElementById("nativeTxt").style.fontSize = Math.min(opts.size, 48) + "px";
+}
+
+// ---------------------------------------------------------------- inspector
+function renderInspector() {
+  const box = document.getElementById("inspect");
+  const g = sel !== null ? layout[sel] : null;
+  if (!g || g.n === "space") {
+    box.innerHTML = `<div class="empty">Click a letter in the preview to adjust its spacing and its kerning with the next letter.</div>`;
+    return;
+  }
+  const nx = g.nextIdx !== null ? layout[g.nextIdx] : null;
+  const s = sb(g.n), own = S.glyphs[baseOf(g.n)] || {}, inherited = baseOf(g.n) !== g.n;
+  const k = nx ? kern(g.n, nx.n) : 0;
+  // pair preview
+  const pair = [g.n, nx ? nx.n : null].filter(Boolean);
+  let x = 60, parts = [];
+  const H = ASC - DESC + 80, by = 40 + ASC;
+  parts.push(`<line x1="0" x2="4000" y1="${by}" y2="${by}" stroke="var(--guide-base)" stroke-width="4"/>`);
+  parts.push(`<line x1="0" x2="4000" y1="${by - XH}" y2="${by - XH}" stroke="var(--guide)" stroke-width="4" stroke-dasharray="20 20"/>`);
+  pair.forEach((n, i) => {
+    const a = adv(n), sv = sb(n);
+    parts.push(`<rect x="${x}" y="${by - ASC}" width="${sv.lsb}" height="${ASC - DESC}" fill="var(--lsb)"/>`);
+    parts.push(`<rect x="${x + a - sv.rsb - S.tracking}" y="${by - ASC}" width="${sv.rsb + S.tracking}" height="${ASC - DESC}" fill="var(--rsb)"/>`);
+    parts.push(`<path d="${PATH[n]}" transform="translate(${x + sv.lsb - G[n].lsb} ${by - lift(n)})" fill="${i ? "#999" : "var(--ink)"}"/>`);
+    x += a + (i === 0 ? k : 0);
+  });
+  const W = x + 60;
+  const label = n => n.replace(".alt", " v");
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span class="gname">${label(g.n)}${nx ? ` <span style="color:var(--muted)">+ ${label(nx.n)}</span>` : ""}</span>
+      <span class="chip">${inherited ? "shares spacing with " + baseOf(g.n) : ""}</span>
+    </div>
+    <svg id="pairView" viewBox="0 0 ${W} ${H}" height="140" preserveAspectRatio="xMidYMid meet">${parts.join("")}</svg>
+    ${stepper("Left side", "lsb", s.lsb, "var(--lsb)", own.lsb !== undefined)}
+    ${stepper("Right side", "rsb", s.rsb, "var(--rsb)", own.rsb !== undefined)}
+    ${stepper(g.n.includes(".alt") ? "Raise / lower (this version)" : "Raise / lower", "dy", s.dy, "#9a7bd1", (S.glyphs[g.n] || {}).dy !== undefined)}
+    ${nx ? stepper(`Kerning ${baseOf(g.n)}→${baseOf(nx.n)}`, "kern", k, "var(--kern)", !!k) : `<p class="chip">Last letter of the word — no kerning pair.</p>`}
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn" id="resetGlyph">Reset this letter</button>
+      <button class="btn" id="testGlyph">Spacing test</button>
+    </div>`;
+  box.querySelectorAll(".stepper").forEach(el => {
+    const f = el.dataset.f;
+    el.querySelector(".m").onclick = e => nudge(f, e.shiftKey ? -25 : -5);
+    el.querySelector(".p").onclick = e => nudge(f, e.shiftKey ? 25 : 5);
+    el.querySelector("input").onchange = e => setVal(f, parseInt(e.target.value || 0));
+  });
+  box.querySelector("#resetGlyph").onclick = () => change(() => {
+    delete S.glyphs[baseOf(g.n)]; delete S.glyphs[g.n];
+    for (const key of Object.keys(S.kerning)) if (key.split(" ").includes(baseOf(g.n))) delete S.kerning[key];
+  });
+  box.querySelector("#testGlyph").onclick = () => spacingTest(g.ch);
+}
+function stepper(name, f, v, color, set) {
+  return `<div class="stepper" data-f="${f}"><span class="name"><i class="sw" style="background:${color}"></i>${name}${set ? "" : ' <span class="chip">· default</span>'}</span>
+    <button class="m">−</button><input value="${Math.round(v)}"><button class="p">+</button></div>`;
+}
+function nudge(f, d) {
+  const g = layout[sel]; if (!g) return;
+  const cur = f === "kern" ? kern(g.n, layout[g.nextIdx]?.n) : sb(g.n)[f];
+  setVal(f, cur + d);
+}
+function setVal(f, v) {
+  const g = layout[sel]; if (!g || g.n === "space") return;
+  change(() => {
+    if (f === "kern") { const nx = layout[g.nextIdx]; if (nx) S.kerning[kernKey(g.n, nx.n)] = v; }
+    else { const key = f === "dy" ? g.n : baseOf(g.n); (S.glyphs[key] = S.glyphs[key] || {})[f] = v; }
+  });
+}
+function spacingTest(ch) {
+  const lower = ch === ch.toLowerCase() && ch !== ch.toUpperCase();
+  const t = lower ? `nn${ch}nn oo${ch}oo n${ch}o${ch}n` : `HH${ch}HH OO${ch}OO H${ch}O${ch}H`;
+  document.getElementById("editor").value = t; sel = 2; switchView("text"); renderAll();
+}
+
+// ---------------------------------------------------------------- side lists
+function renderKernList() {
+  const el = document.getElementById("kernList");
+  const ks = Object.entries(S.kerning).sort((a, b) => a[0].localeCompare(b[0]));
+  document.getElementById("kcount").textContent = ks.length ? `· ${ks.length}` : "";
+  const chOf = n => Object.keys(CMAP).find(c => CMAP[c] === n) || n;
+  el.innerHTML = ks.length ? ks.map(([p, v]) => {
+    const [a, b] = p.split(" ");
+    return `<div class="k"><span class="p" data-t="${chOf(a)}${chOf(b)}">${chOf(a)}${chOf(b)}</span><span class="v">${v > 0 ? "+" : ""}${v}</span><button data-p="${p}">✕</button></div>`;
+  }).join("") : `<p class="chip">None yet. Click a letter, then use ← →.</p>`;
+  el.querySelectorAll("button").forEach(b => b.onclick = () => change(() => delete S.kerning[b.dataset.p]));
+  el.querySelectorAll(".p").forEach(b => b.onclick = () => { document.getElementById("editor").value = `H${b.dataset.t}H o${b.dataset.t}o ${b.dataset.t}`; sel = 1; renderAll(); });
+}
+function renderControls() {
+  const fmt = { lineGap: v => `${v} · line height ${((ASC - DESC + v) / UPM).toFixed(2)}×`, tracking: v => `${v}`,
+                sidebearing: v => `${v}`, space: v => `${v}` };
+  for (const k of ["lineGap", "tracking", "sidebearing", "space"]) {
+    document.getElementById(k).value = S[k]; document.getElementById("o_" + k).textContent = fmt[k](S[k]);
+  }
+  document.getElementById("o_size").textContent = opts.size + " px";
+  const nk = Object.keys(S.kerning).length, ng = Object.keys(S.glyphs).length;
+  const glob = ["sidebearing", "space", "tracking", "lineGap"].filter(k => S[k] !== DEFAULT_T[k]).length;
+  document.getElementById("summary").innerHTML =
+    `<b>${nk}</b> kerning pair${nk === 1 ? "" : "s"} · <b>${ng}</b> letter${ng === 1 ? "" : "s"} respaced · <b>${glob}</b> global setting${glob === 1 ? "" : "s"} changed since the last build`;
+  document.getElementById("hist").textContent = hist.length ? `${hist.length} edit${hist.length === 1 ? "" : "s"}` : "";
+}
+function renderGrid() {
+  const el = document.getElementById("grid");
+  if (el.dataset.done) return;
+  const names = Object.keys(G).filter(n => PATH[n]);
+  el.innerHTML = names.map(n => {
+    const w = G[n].adv;
+    return `<div class="cell" data-n="${n}"><svg viewBox="${-40} ${-ASC - 40} ${w + 80} ${ASC - DESC + 80}"><line x1="-40" x2="${w + 40}" y1="0" y2="0" stroke="var(--guide-base)" stroke-width="6"/><path d="${PATH[n]}"/></svg><div>${n}</div></div>`;
+  }).join("");
+  el.querySelectorAll(".cell").forEach(c => c.onclick = () => {
+    const n = c.dataset.n, base = baseOf(n), ch = Object.keys(CMAP).find(k => CMAP[k] === base);
+    if (ch) spacingTest(ch);
+  });
+  el.dataset.done = 1;
+}
+function renderAll() { renderText(); renderInspector(); renderKernList(); renderControls(); }
+function switchView(v) {
+  view = v;
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.view === v));
+  document.getElementById("textView").style.display = v === "text" ? "" : "none";
+  document.getElementById("grid").style.display = v === "grid" ? "grid" : "none";
+  if (v === "grid") renderGrid();
+}
+
+// ---------------------------------------------------------------- events
+function wire() {
+  const ed = document.getElementById("editor");
+  let saved = null; try { saved = localStorage.getItem("shii-tuner-text"); } catch (e) {}
+  ed.value = saved || PRESETS["Pangram"] + "\n" + PRESETS["Repeats"];
+  ed.oninput = () => { sel = null; try { localStorage.setItem("shii-tuner-text", ed.value); } catch (e) {} renderAll(); };
+  const pr = document.getElementById("presets");
+  pr.innerHTML = Object.keys(PRESETS).map(k => `<button>${k}</button>`).join("");
+  pr.querySelectorAll("button").forEach(b => b.onclick = () => { ed.value = PRESETS[b.textContent]; ed.oninput(); });
+  document.getElementById("preview").addEventListener("click", e => {
+    const t = e.target.closest(".hit"); if (!t) return;
+    sel = +t.dataset.i; renderText(); renderInspector();
+  });
+  for (const k of ["lineGap", "tracking", "sidebearing", "space"]) {
+    const el = document.getElementById(k);
+    el.addEventListener("pointerdown", () => { hist.push(JSON.stringify(S)); fut = []; });
+    el.addEventListener("input", () => { S[k] = +el.value; persist(); renderText(); renderInspector(); renderControls(); });
+  }
+  document.getElementById("size").oninput = e => { opts.size = +e.target.value; renderText(); renderControls(); };
+  document.getElementById("t_cycle").onchange = e => { opts.cycle = e.target.checked; sel = null; renderAll(); };
+  document.getElementById("t_guides").onchange = e => { opts.guides = e.target.checked; renderText(); };
+  document.getElementById("t_boxes").onchange = e => { opts.boxes = e.target.checked; renderText(); };
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => switchView(b.dataset.view));
+  document.getElementById("undo").onclick = undo; document.getElementById("redo").onclick = redo;
+  document.getElementById("reset").onclick = () => { if (confirm("Reset all spacing and kerning to the last build?")) change(() => { S = structuredClone(DEFAULT_T); }); };
+  const modal = document.getElementById("modal"), out = document.getElementById("out");
+  document.getElementById("send").onclick = () => { tidy(); out.value = JSON.stringify(S, null, 1); modal.style.display = "grid"; out.select(); };
+  document.getElementById("close").onclick = () => modal.style.display = "none";
+  modal.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+  document.getElementById("copy").onclick = async e => {
+    try { await navigator.clipboard.writeText(out.value); } catch (err) { out.select(); document.execCommand("copy"); }
+    e.target.textContent = "Copied ✓"; setTimeout(() => e.target.textContent = "Copy", 1500);
+  };
+  document.getElementById("dl").onclick = () => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([out.value], { type: "application/json" }));
+    a.download = "tuning.json"; a.click();
+  };
+  window.addEventListener("resize", () => renderText());
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (e.key === "Escape") { sel = null; renderText(); renderInspector(); return; }
+    if (sel === null) return;
+    if (e.key === "Tab") {
+      e.preventDefault(); const dir = e.shiftKey ? -1 : 1; let i = sel;
+      do { i = (i + dir + layout.length) % layout.length; } while (layout[i].n === "space" && i !== sel);
+      sel = i; renderText(); renderInspector(); return;
+    }
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault(); nudge("dy", (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 25 : 5)); return;
+    }
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const d = (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 25 : 5);
+    if (e.altKey) nudge("lsb", d); else if (mod) nudge("rsb", d); else if (layout[sel].nextIdx !== null) nudge("kern", d);
+  });
+}
+function undo() { if (!hist.length) return; fut.push(JSON.stringify(S)); S = JSON.parse(hist.pop()); persist(); renderAll(); }
+function redo() { if (!fut.length) return; hist.push(JSON.stringify(S)); S = JSON.parse(fut.pop()); persist(); renderAll(); }
+
+// ---------------------------------------------------------------- boot
+(function boot() {
+  const bin = Uint8Array.from(atob(FONT_B64), c => c.charCodeAt(0));
+  font = opentype.parse(bin.buffer);
+  buildPathCache();
+  document.getElementById("loading").remove();
+  wire(); renderAll();
+})();
+</script>
+</body>
+</html>

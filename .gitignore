@@ -1,0 +1,18 @@
+# environment & generated
+.venv/
+build/
+work/
+__pycache__/
+.DS_Store
+
+# personal source material / third-party template
+input/
+templates/
+
+# Khat (kept off this repo)
+diary.html
+tools/diary_template.html
+tools/make_diary.py
+
+# duplicate of release/Shii-Regular.otf
+/Shii-Regular.otf
